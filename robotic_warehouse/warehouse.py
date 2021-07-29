@@ -52,7 +52,6 @@ class Direction(Enum):
     RIGHT = 3
 
 
-## Modify this with the new reward design
 class RewardType(Enum):
     GLOBAL = 0
     INDIVIDUAL = 1
@@ -609,6 +608,8 @@ class Warehouse(gym.Env):
             )
             self.request_queue[self.request_queue.index(shelf)] = new_request
             # also reward the agents
+
+            ## Modify this with the new reward
             if self.reward_type == RewardType.GLOBAL:
                 rewards += 1
             elif self.reward_type == RewardType.INDIVIDUAL:
