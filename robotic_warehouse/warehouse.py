@@ -491,18 +491,18 @@ class Warehouse(gym.Env):
         #     self.grid[0, s.y, s.x] = 1
         # print(self.grid[0])
     
-    '''
+    
     def _reward(self, x, y):
         """
         Compute the reward to be given upon success
         """
 
-        if np.() < :
+        if np.linalg.norm(x - y) < :
             reward = 
         elif : 
             reward = 
         return reward
-    '''
+    
 
     def step(
         self, actions: List[Action]
@@ -623,15 +623,26 @@ class Warehouse(gym.Env):
 
             # also reward the agents
             ## Modify this with the new reward
+            # if self.reward_type == RewardType.GLOBAL:
+            #     rewards += 1
+            # elif self.reward_type == RewardType.INDIVIDUAL:
+            #     agent_id = self.grid[_LAYER_AGENTS, y, x]
+            #     rewards[agent_id - 1] += 1
+            # elif self.reward_type == RewardType.TWO_STAGE:
+            #     agent_id = self.grid[_LAYER_AGENTS, y, x]
+            #     self.agents[agent_id - 1].has_delivered = True
+            #     rewards[agent_id - 1] += 0.5
+
             if self.reward_type == RewardType.GLOBAL:
-                rewards += 1
+                rewards += self._reward()
             elif self.reward_type == RewardType.INDIVIDUAL:
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
-                rewards[agent_id - 1] += 1
+                rewards[agent_id - 1] += self._reward()
             elif self.reward_type == RewardType.TWO_STAGE:
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
                 self.agents[agent_id - 1].has_delivered = True
                 rewards[agent_id - 1] += 0.5
+                
 
         if shelf_delivered:
             self._cur_inactive_steps = 0
