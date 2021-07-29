@@ -52,6 +52,7 @@ class Direction(Enum):
     RIGHT = 3
 
 
+## Modify this with the new reward design
 class RewardType(Enum):
     GLOBAL = 0
     INDIVIDUAL = 1
