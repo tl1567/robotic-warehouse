@@ -608,15 +608,15 @@ class Warehouse(gym.Env):
 
             if shelf not in self.request_queue:
                 continue
-            # a shelf was successfully delived.
+            # a shelf was successfully delivered.
             shelf_delivered = True
             # remove from queue and replace it
             new_request = np.random.choice(
                 list(set(self.shelfs) - set(self.request_queue))
             )
             self.request_queue[self.request_queue.index(shelf)] = new_request
+            
             # also reward the agents
-
             ## Modify this with the new reward
             if self.reward_type == RewardType.GLOBAL:
                 rewards += 1
