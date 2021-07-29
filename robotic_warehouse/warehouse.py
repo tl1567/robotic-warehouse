@@ -490,6 +490,14 @@ class Warehouse(gym.Env):
         # for s in self.shelfs:
         #     self.grid[0, s.y, s.x] = 1
         # print(self.grid[0])
+    
+    def _reward(self):
+        """
+        Compute the reward to be given upon success
+        """
+
+
+        return 
 
     def step(
         self, actions: List[Action]
@@ -664,7 +672,7 @@ if __name__ == "__main__":
     # env.step(18 * [Action.LOAD] + 2 * [Action.NOOP])
 
     for _ in tqdm(range(1000000)):
-        # time.sleep(2)
-        # env.render()
+        time.sleep(2)
+        env.render()
         actions = env.action_space.sample()
         env.step(actions)
