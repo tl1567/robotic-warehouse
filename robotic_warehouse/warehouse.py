@@ -623,6 +623,7 @@ class Warehouse(gym.Env):
 
             # also reward the agents
             ## Modify this with the new reward
+            
             # if self.reward_type == RewardType.GLOBAL:
             #     rewards += 1
             # elif self.reward_type == RewardType.INDIVIDUAL:
@@ -642,7 +643,7 @@ class Warehouse(gym.Env):
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
                 self.agents[agent_id - 1].has_delivered = True
                 rewards[agent_id - 1] += 0.5
-                
+
 
         if shelf_delivered:
             self._cur_inactive_steps = 0
