@@ -491,13 +491,18 @@ class Warehouse(gym.Env):
         #     self.grid[0, s.y, s.x] = 1
         # print(self.grid[0])
     
-    def _reward(self):
+    '''
+    def _reward(self, x, y):
         """
         Compute the reward to be given upon success
         """
 
-
-        return 
+        if np.() < :
+            reward = 
+        elif : 
+            reward = 
+        return reward
+    '''
 
     def step(
         self, actions: List[Action]
@@ -615,7 +620,7 @@ class Warehouse(gym.Env):
                 list(set(self.shelfs) - set(self.request_queue))
             )
             self.request_queue[self.request_queue.index(shelf)] = new_request
-            
+
             # also reward the agents
             ## Modify this with the new reward
             if self.reward_type == RewardType.GLOBAL:
