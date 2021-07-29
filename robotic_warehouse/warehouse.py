@@ -497,10 +497,10 @@ class Warehouse(gym.Env):
         Compute the reward to be given upon success
         """
 
-        if np.linalg.norm(x - y) < :
-            reward = 
+        if np.linalg.norm(x - y, ord="1") < :
+            reward = 0
         elif : 
-            reward = 
+            reward = - np.linalg.norm(, ord="1")
         return reward
     
 
@@ -623,7 +623,7 @@ class Warehouse(gym.Env):
 
             # also reward the agents
             ## Modify this with the new reward
-            
+
             # if self.reward_type == RewardType.GLOBAL:
             #     rewards += 1
             # elif self.reward_type == RewardType.INDIVIDUAL:
