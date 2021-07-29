@@ -5,7 +5,7 @@ setup(
     version="0.0.1",
     description="Robotic Warehouse Environment for RL",
     author="Filippos Christianos",
-    url="https://github.com/semitable/robotic-warehouse",
+    url="https://github.com/tl1567/robotic-warehouse",
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
     classifiers=[
         "Development Status :: 4 - Beta",
