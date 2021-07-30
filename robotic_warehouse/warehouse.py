@@ -493,15 +493,15 @@ class Warehouse(gym.Env):
         # print(self.grid[0])
     
     
-    def _reward(self, start, target):
+    def _reward(self, pos, goal, d):
         """
         Compute the reward to be given upon successful delivery
         """
 
-        if np.linalg.norm(start - target, ord="1") < 10.:
+        if np.linalg.norm(pos - goal, ord="1") < d:
             reward = 0
         else: 
-            reward = - np.linalg.norm(start - target, ord="1")
+            reward = - np.linalg.norm(pos - goal, ord="1")
         return reward
     
 
@@ -606,6 +606,19 @@ class Warehouse(gym.Env):
 
         self._recalc_grid()
 
+        ## Assign the newly designed rewards (non-sparse)
+        pos = [agent.x, agent.y]
+        goals = [list(self.goals[0]), list(self.goals[1])]
+        if self.reward_type == RewardType.GLOBAL:
+            rewards += np.max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
+        elif self.reward_type == RewardType.INDIVIDUAL:
+            agent_id = self.grid[_LAYER_AGENTS, self.goals[1], self.goals[0]]
+            rewards[agent_id - 1] += np.max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
+        elif self.reward_type == RewardType.TWO_STAGE:
+            agent_id = self.grid[_LAYER_AGENTS, self.goals[1], self.goals[0]]
+            self.agents[agent_id - 1].has_delivered = True
+            rewards[agent_id - 1] += 0.5
+
         shelf_delivered = False
         for x, y in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, y, x]
@@ -624,7 +637,7 @@ class Warehouse(gym.Env):
             self.request_queue[self.request_queue.index(shelf)] = new_request
 
             # also reward the agents **originally only reward the agents when the shelf has been delivered**
-            ## Modify this with the newly designed reward (non-sparse)
+            ## Modify this with 
 
             # if self.reward_type == RewardType.GLOBAL:
             #     rewards += 1
@@ -634,17 +647,7 @@ class Warehouse(gym.Env):
             # elif self.reward_type == RewardType.TWO_STAGE:
             #     agent_id = self.grid[_LAYER_AGENTS, y, x]
             #     self.agents[agent_id - 1].has_delivered = True
-            #     rewards[agent_id - 1] += 0.5
-
-            if self.reward_type == RewardType.GLOBAL:
-                rewards += self._reward()
-            elif self.reward_type == RewardType.INDIVIDUAL:
-                agent_id = self.grid[_LAYER_AGENTS, y, x]
-                rewards[agent_id - 1] += self._reward()
-            elif self.reward_type == RewardType.TWO_STAGE:
-                agent_id = self.grid[_LAYER_AGENTS, y, x]
-                self.agents[agent_id - 1].has_delivered = True
-                rewards[agent_id - 1] += 0.5
+            #     rewards[agent_id - 1] += 0.5            
 
 
         if shelf_delivered:
