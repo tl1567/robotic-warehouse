@@ -208,7 +208,7 @@ class Warehouse(gym.Env):
         self.max_inactivity_steps: Optional[int] = max_inactivity_steps
         self.reward_type = reward_type
         # self.reward_range = (0, 1)
-        self.reward_range = (-np.inf, 0)
+        self.reward_range = (-np.inf, 0.)
 
         self._cur_inactive_steps = None
         self._cur_steps = 0
@@ -498,10 +498,10 @@ class Warehouse(gym.Env):
         Compute the reward to be given upon successful delivery
         """
 
-        if np.linalg.norm(pos - goal, ord="1") < d:
+        if np.linalg.norm(pos - goal, ord=1) < d:
             reward = 0
         else: 
-            reward = - np.linalg.norm(pos - goal, ord="1")
+            reward = - np.linalg.norm(pos - goal, ord=1)
         return reward
     
 
@@ -604,20 +604,26 @@ class Warehouse(gym.Env):
 
                     agent.has_delivered = False
 
+            ## Assign the newly designed rewards (non-sparse)
+            pos = np.array([agent.x, agent.y])
+            goals = np.array([list(self.goals[0]), list(self.goals[1])])
+            # print(pos)
+            # print(goals)
+            # print(self.grid)
+            if self.reward_type == RewardType.GLOBAL:
+                rewards += max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
+            elif self.reward_type == RewardType.INDIVIDUAL:
+                agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                rewards[agent_id - 1] += max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
+            elif self.reward_type == RewardType.TWO_STAGE:
+                agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                self.agents[agent_id - 1].has_delivered = True
+                rewards[agent_id - 1] += 0.5
+
+
         self._recalc_grid()
 
-        ## Assign the newly designed rewards (non-sparse)
-        pos = [agent.x, agent.y]
-        goals = [list(self.goals[0]), list(self.goals[1])]
-        if self.reward_type == RewardType.GLOBAL:
-            rewards += np.max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
-        elif self.reward_type == RewardType.INDIVIDUAL:
-            agent_id = self.grid[_LAYER_AGENTS, self.goals[1], self.goals[0]]
-            rewards[agent_id - 1] += np.max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
-        elif self.reward_type == RewardType.TWO_STAGE:
-            agent_id = self.grid[_LAYER_AGENTS, self.goals[1], self.goals[0]]
-            self.agents[agent_id - 1].has_delivered = True
-            rewards[agent_id - 1] += 0.5
+        
 
         shelf_delivered = False
         for x, y in self.goals:
