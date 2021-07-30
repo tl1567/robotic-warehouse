@@ -146,7 +146,7 @@ class Warehouse(gym.Env):
         """The robotic warehouse environment
 
         Creates a grid world where multiple agents (robots)
-        are supposed to collect shelfs, bring them to a goal
+        are supposed to collect shelves, bring them to a goal
         and then return them.
         .. note:
             The grid looks like this:
