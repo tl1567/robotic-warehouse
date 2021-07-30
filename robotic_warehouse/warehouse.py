@@ -208,7 +208,7 @@ class Warehouse(gym.Env):
         self.max_inactivity_steps: Optional[int] = max_inactivity_steps
         self.reward_type = reward_type
         # self.reward_range = (0, 1)
-        self.reward_range = (-np.inf, np.inf)
+        self.reward_range = (-np.inf, 0)
 
         self._cur_inactive_steps = None
         self._cur_steps = 0
