@@ -493,15 +493,15 @@ class Warehouse(gym.Env):
         # print(self.grid[0])
     
     
-    def _reward(self, x, y):
+    def _reward(self, start, target):
         """
         Compute the reward to be given upon success
         """
 
-        if np.linalg.norm(x - y, ord="1") < 10.:
+        if np.linalg.norm(start - target, ord="1") < 10.:
             reward = 0
         else: 
-            reward = - np.linalg.norm(, ord="1")
+            reward = - np.linalg.norm(start - target, ord="1")
         return reward
     
 
@@ -599,6 +599,7 @@ class Warehouse(gym.Env):
                 if not self._is_highway(agent.x, agent.y):
                     agent.carrying_shelf = None
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
+                        ## might need to change this
                         rewards[agent.id - 1] += 0.5
 
                     agent.has_delivered = False
@@ -622,8 +623,8 @@ class Warehouse(gym.Env):
             )
             self.request_queue[self.request_queue.index(shelf)] = new_request
 
-            # also reward the agents
-            ## Modify this with the new reward
+            # also reward the agents **originally only reward the agents when the shelf is delivered**
+            ## Modify this with the newly designed reward (non-sparse)
 
             # if self.reward_type == RewardType.GLOBAL:
             #     rewards += 1
