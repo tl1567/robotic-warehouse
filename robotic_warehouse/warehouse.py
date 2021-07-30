@@ -691,6 +691,7 @@ class Warehouse(gym.Env):
 
 if __name__ == "__main__":
     env = Warehouse(9, 8, 3, 10, 3, 1, 5, None, None, RewardType.GLOBAL)
+    # env = Warehouse(1, 3, 3, 2, 3, 1, 5, None, None, RewardType.INDIVIDUAL)
     env.reset()
     import time
     from tqdm import tqdm
