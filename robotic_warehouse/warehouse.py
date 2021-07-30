@@ -623,7 +623,7 @@ class Warehouse(gym.Env):
             )
             self.request_queue[self.request_queue.index(shelf)] = new_request
 
-            # also reward the agents **originally only reward the agents when the shelf is delivered**
+            # also reward the agents **originally only reward the agents when the shelf has been delivered**
             ## Modify this with the newly designed reward (non-sparse)
 
             # if self.reward_type == RewardType.GLOBAL:
