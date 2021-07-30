@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict, OrderedDict
 import gym
 from gym import spaces
+from numpy.lib.utils import info
 
 from robotic_warehouse.utils import MultiAgentActionSpace, MultiAgentObservationSpace
 
@@ -208,7 +209,7 @@ class Warehouse(gym.Env):
         self.max_inactivity_steps: Optional[int] = max_inactivity_steps
         self.reward_type = reward_type
         # self.reward_range = (0, 1)
-        self.reward_range = (-np.inf, 0.)
+        self.reward_range = (-np.inf, np.inf)
 
         self._cur_inactive_steps = None
         self._cur_steps = 0
@@ -604,7 +605,7 @@ class Warehouse(gym.Env):
 
                     agent.has_delivered = False
 
-            ## Assign the newly designed rewards (non-sparse)
+            ## Add the newly designed rewards (non-sparse)
             pos = np.array([agent.x, agent.y])
             goals = np.array([list(self.goals[0]), list(self.goals[1])])
             # print(pos)
@@ -643,17 +644,17 @@ class Warehouse(gym.Env):
             self.request_queue[self.request_queue.index(shelf)] = new_request
 
             # also reward the agents **originally only reward the agents when the shelf has been delivered**
-            ## Modify this with the newly designed rewards (non-sparse)
+            ## Keep the following sparse rewards
 
-            # if self.reward_type == RewardType.GLOBAL:
-            #     rewards += 1
-            # elif self.reward_type == RewardType.INDIVIDUAL:
-            #     agent_id = self.grid[_LAYER_AGENTS, y, x]
-            #     rewards[agent_id - 1] += 1
-            # elif self.reward_type == RewardType.TWO_STAGE:
-            #     agent_id = self.grid[_LAYER_AGENTS, y, x]
-            #     self.agents[agent_id - 1].has_delivered = True
-            #     rewards[agent_id - 1] += 0.5            
+            if self.reward_type == RewardType.GLOBAL:
+                rewards += 1
+            elif self.reward_type == RewardType.INDIVIDUAL:
+                agent_id = self.grid[_LAYER_AGENTS, y, x]
+                rewards[agent_id - 1] += 1
+            elif self.reward_type == RewardType.TWO_STAGE:
+                agent_id = self.grid[_LAYER_AGENTS, y, x]
+                self.agents[agent_id - 1].has_delivered = True
+                rewards[agent_id - 1] += 0.5            
 
 
         if shelf_delivered:
