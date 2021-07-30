@@ -207,7 +207,8 @@ class Warehouse(gym.Env):
         self.sensor_range = sensor_range
         self.max_inactivity_steps: Optional[int] = max_inactivity_steps
         self.reward_type = reward_type
-        self.reward_range = (0, 1)
+        # self.reward_range = (0, 1)
+        self.reward_range = (-np.inf, np.inf)
 
         self._cur_inactive_steps = None
         self._cur_steps = 0
@@ -497,9 +498,9 @@ class Warehouse(gym.Env):
         Compute the reward to be given upon success
         """
 
-        if np.linalg.norm(x - y, ord="1") < :
+        if np.linalg.norm(x - y, ord="1") < 10.:
             reward = 0
-        elif : 
+        else: 
             reward = - np.linalg.norm(, ord="1")
         return reward
     
