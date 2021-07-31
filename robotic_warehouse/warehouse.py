@@ -502,7 +502,7 @@ class Warehouse(gym.Env):
         if np.linalg.norm(pos - goal, ord=1) < d:
             reward = 0
         else: 
-            reward = - np.linalg.norm(pos - goal, ord=1)
+            reward = - np.linalg.norm(pos - goal, ord=1) / (self.grid_size[0] * self.grid_size[1])
         return reward
     
 
@@ -606,13 +606,14 @@ class Warehouse(gym.Env):
                     agent.has_delivered = False
 
             ## Add the newly designed rewards (non-sparse)
+            ## Three possible scenarios for non-delivering actions
             pos = np.array([agent.x, agent.y])
             goals = np.array([list(self.goals[0]), list(self.goals[1])])
             # print(pos)
             # print(goals)
             # print(self.grid)
             if self.reward_type == RewardType.GLOBAL:
-                rewards += max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
+                rewards += max(self._reward(pos, goals[0], 200.), self._reward(pos, goals[1], 200.))
             elif self.reward_type == RewardType.INDIVIDUAL:
                 agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
                 rewards[agent_id - 1] += max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
