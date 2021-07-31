@@ -496,9 +496,8 @@ class Warehouse(gym.Env):
     
     def _reward(self, pos, goal, d):
         """
-        Compute the reward to be given upon successful delivery
+        Compute the reward to be given 
         """
-
         if np.linalg.norm(pos - goal, ord=1) < d:
             reward = 0
         else: 
