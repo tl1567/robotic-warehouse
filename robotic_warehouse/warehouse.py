@@ -609,7 +609,8 @@ class Warehouse(gym.Env):
             ## Add the newly designed rewards (non-sparse)
             ## Three possible scenarios for non-delivering actions
             pos = np.array([agent.x, agent.y])
-            shelf_pos = np.array([])
+            if agent.req_action == Action.TOGGLE_LOAD and not agent.carrying_shelf:
+                shelf_pos = np.array([])
             goals = np.array([list(self.goals[0]), list(self.goals[1])])
             dist = self.grid_size[0] * self.grid_size[1]
             # print(pos)
