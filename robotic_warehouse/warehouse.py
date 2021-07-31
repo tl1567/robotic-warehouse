@@ -612,15 +612,30 @@ class Warehouse(gym.Env):
             # print(pos)
             # print(goals)
             # print(self.grid)
-            if self.reward_type == RewardType.GLOBAL:
-                rewards += max(self._reward(pos, goals[0], 200.), self._reward(pos, goals[1], 200.))
-            elif self.reward_type == RewardType.INDIVIDUAL:
-                agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                rewards[agent_id - 1] += max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
-            elif self.reward_type == RewardType.TWO_STAGE:
-                agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                self.agents[agent_id - 1].has_delivered = True
-                rewards[agent_id - 1] += 0.5
+            if agent.carrying_shelf: 
+                if self.reward_type == RewardType.GLOBAL:
+                    rewards += max(self._reward(pos, goals[0], 200.), self._reward(pos, goals[1], 200.))
+                elif self.reward_type == RewardType.INDIVIDUAL:
+                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                    rewards[agent_id - 1] += max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
+                elif self.reward_type == RewardType.TWO_STAGE:
+                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                    self.agents[agent_id - 1].has_delivered = True
+                    rewards[agent_id - 1] += 0.5
+            else: 
+                if agent.has_delivered:
+                    if self.reward_type == RewardType.GLOBAL:
+                        rewards += max(self._reward(pos, goals[0], 200.), self._reward(pos, goals[1], 200.))
+                    elif self.reward_type == RewardType.INDIVIDUAL:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        rewards[agent_id - 1] += max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
+                    elif self.reward_type == RewardType.TWO_STAGE:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        self.agents[agent_id - 1].has_delivered = True
+                        rewards[agent_id - 1] += 0.5
+                else: 
+                    
+
 
 
         self._recalc_grid()
