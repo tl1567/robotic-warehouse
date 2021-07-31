@@ -209,7 +209,7 @@ class Warehouse(gym.Env):
         self.max_inactivity_steps: Optional[int] = max_inactivity_steps
         self.reward_type = reward_type
         # self.reward_range = (0, 1)
-        self.reward_range = (-np.inf, np.inf)
+        self.reward_range = (-float("inf"), float("inf"))
 
         self._cur_inactive_steps = None
         self._cur_steps = 0
@@ -601,40 +601,48 @@ class Warehouse(gym.Env):
                     agent.carrying_shelf = None
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
                         ## might need to change this
-                        rewards[agent.id - 1] += 0.5
+                        # rewards[agent.id - 1] += 0.5
+                        rewards[agent.id - 1] += 1
 
                     agent.has_delivered = False
 
             ## Add the newly designed rewards (non-sparse)
             ## Three possible scenarios for non-delivering actions
             pos = np.array([agent.x, agent.y])
+            shelf_pos = np.array([])
             goals = np.array([list(self.goals[0]), list(self.goals[1])])
+            dist = self.grid_size[0] * self.grid_size[1]
             # print(pos)
             # print(goals)
             # print(self.grid)
-            if agent.carrying_shelf: 
-                if self.reward_type == RewardType.GLOBAL:
-                    rewards += max(self._reward(pos, goals[0], 200.), self._reward(pos, goals[1], 200.))
-                elif self.reward_type == RewardType.INDIVIDUAL:
-                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                    rewards[agent_id - 1] += max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
-                elif self.reward_type == RewardType.TWO_STAGE:
-                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                    self.agents[agent_id - 1].has_delivered = True
-                    rewards[agent_id - 1] += 0.5
-            else: 
-                if agent.has_delivered:
+            if agent.carrying_shelf:
+                if not agent.has_delivered:
                     if self.reward_type == RewardType.GLOBAL:
-                        rewards += max(self._reward(pos, goals[0], 200.), self._reward(pos, goals[1], 200.))
+                        rewards += max(self._reward(pos, goals[0], dist), self._reward(pos, goals[1], dist))
                     elif self.reward_type == RewardType.INDIVIDUAL:
                         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += max(self._reward(pos, goals[0], 10.), self._reward(pos, goals[1], 10.))
+                        rewards[agent_id - 1] += max(self._reward(pos, goals[0], dist), self._reward(pos, goals[1], dist))
                     elif self.reward_type == RewardType.TWO_STAGE:
                         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        self.agents[agent_id - 1].has_delivered = True
-                        rewards[agent_id - 1] += 0.5
+                        rewards[agent_id - 1] += 1
                 else: 
-                    
+                    if self.reward_type == RewardType.GLOBAL:
+                        rewards += self._reward(pos, shelf_pos, dist)
+                    elif self.reward_type == RewardType.INDIVIDUAL:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        rewards[agent_id - 1] += self._reward(pos, shelf_pos, dist)
+                    elif self.reward_type == RewardType.TWO_STAGE:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        rewards[agent_id - 1] += 1
+            else: 
+                if self.reward_type == RewardType.GLOBAL:
+                    rewards += max(self._reward(pos, goals[0], dist), self._reward(pos, goals[1], dist))
+                elif self.reward_type == RewardType.INDIVIDUAL:
+                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                    rewards[agent_id - 1] += max(self._reward(pos, goals[0], dist), self._reward(pos, goals[1], dist))
+                elif self.reward_type == RewardType.TWO_STAGE:
+                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                    rewards[agent_id - 1] += 1
 
 
 
@@ -666,12 +674,13 @@ class Warehouse(gym.Env):
                 rewards += 1
             elif self.reward_type == RewardType.INDIVIDUAL:
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
-                rewards[agent_id - 1] += 1
+                # rewards[agent_id - 1] += 1
+                rewards[agent_id - 1] += 2
             elif self.reward_type == RewardType.TWO_STAGE:
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
                 self.agents[agent_id - 1].has_delivered = True
-                rewards[agent_id - 1] += 0.5            
-
+                # rewards[agent_id - 1] += 0.5            
+                rewards[agent_id - 1] += 1  
 
         if shelf_delivered:
             self._cur_inactive_steps = 0
