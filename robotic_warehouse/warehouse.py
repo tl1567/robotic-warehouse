@@ -587,6 +587,40 @@ class Warehouse(gym.Env):
         rewards = np.zeros(self.n_agents)
         
 
+        pos = np.array([agent.x, agent.y])
+        goals = np.array([list(self.goals[0]), list(self.goals[1])])
+        dist = self.grid_size[0] * self.grid_size[1]
+
+        request_shelf_ids = [shelf.id for shelf in self.request_queue]            
+        # request_shelf_coordinates = \
+        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in request_shelf_ids]
+
+        delivered_shelf_ids = [shelf.id for shelf in self.delivered_shelf]
+        # delivered_shelf_coordinates = \
+        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in delivered_shelf_ids]
+
+        carried_delivered_shelf_ids = [shelf.id for shelf in self.carried_delivered_shelf]      
+        print("carried and delivered:", carried_delivered_shelf_ids)
+        carried_delivered_shelf_coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in carried_delivered_shelf_ids]
+
+        carried_request_shelf_ids = [shelf.id for shelf in self.carried_request_shelf]
+        print("carried and under request:", carried_request_shelf_ids)
+        carried_request_shelf_coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in carried_request_shelf_ids]
+
+        uncarried_request_shelf_ids = list(set(request_shelf_ids) - set(carried_request_shelf_ids))
+        print("uncarried and under request:", uncarried_request_shelf_ids)
+        uncarried_request_shelf_coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in uncarried_request_shelf_ids]
+            
+        uncarried_delivered_shelf_ids = list(set(delivered_shelf_ids) - set(carried_delivered_shelf_ids)) 
+        print("uncarried and delivered:", uncarried_delivered_shelf_ids)
+        uncarried_delivered_shelf_coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in uncarried_delivered_shelf_ids]
+
+
+
         for agent in self.agents:
             agent.prev_x, agent.prev_y = agent.x, agent.y
 
@@ -602,52 +636,23 @@ class Warehouse(gym.Env):
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
                     # self.carried_shelf.append(agent.carrying_shelf)
                     self.carried_request_shelf.append(agent.carrying_shelf)
-            elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:                        
-                if not self._is_highway(agent.x, agent.y):                    
-                    agent.carrying_shelf = None
-                    if agent.has_delivered:
-                        self.carried_delivered_shelf.remove(agent.carrying_shelf)
+                    self.carried_request_shelf = list(set(self.carried_request_shelf))
+            elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:            
+                if not self._is_highway(agent.x, agent.y):  
+                    if (agent.x, agent.y) not in self.goals and agent.carrying_shelf in self.carried_delivered_shelf:
+                        self.carried_delivered_shelf.remove(agent.carrying_shelf)           
+                    agent.carrying_shelf = None                    
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
                         ## might need to change this
                         # rewards[agent.id - 1] += 0.5
                         rewards[agent.id - 1] += 1
 
-                    agent.has_delivered = False                
+                    agent.has_delivered = False          
 
 
 
             ## Add the newly designed rewards (non-sparse)
-            pos = np.array([agent.x, agent.y])
-            goals = np.array([list(self.goals[0]), list(self.goals[1])])
-            dist = self.grid_size[0] * self.grid_size[1]
-
-            request_shelf_ids = [shelf.id for shelf in self.request_queue]            
-            # request_shelf_coordinates = \
-            #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in request_shelf_ids]
-
-            delivered_shelf_ids = [shelf.id for shelf in self.delivered_shelf]
-            # delivered_shelf_coordinates = \
-            #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in delivered_shelf_ids]
-
-            carried_delivered_shelf_ids = [shelf.id for shelf in self.carried_delivered_shelf]      
-            print("carried and delivered:", carried_delivered_shelf_ids)
-            carried_delivered_shelf_coordinates = \
-                [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in carried_delivered_shelf_ids]
-
-            carried_request_shelf_ids = [shelf.id for shelf in self.carried_request_shelf]
-            print("carried and under request:", carried_request_shelf_ids)
-            carried_request_shelf_coordinates = \
-                [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in carried_request_shelf_ids]
-
-            uncarried_request_shelf_ids = list(set(request_shelf_ids) - set(carried_request_shelf_ids))
-            print("uncarried and under request:", uncarried_request_shelf_ids)
-            uncarried_request_shelf_coordinates = \
-                [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in uncarried_request_shelf_ids]
             
-            uncarried_delivered_shelf_ids = list(set(delivered_shelf_ids) - set(carried_delivered_shelf_ids)) 
-            print("uncarried and delivered:", uncarried_delivered_shelf_ids)
-            uncarried_delivered_shelf_coordinates = \
-                [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in uncarried_delivered_shelf_ids]
 
 
             if agent.carrying_shelf:
@@ -702,12 +707,15 @@ class Warehouse(gym.Env):
             # a shelf was successfully delivered.
             shelf_delivered = True
             self.delivered_shelf.append(shelf)
+            self.delivered_shelf = list(set(self.delivered_shelf))
             self.carried_delivered_shelf.append(shelf)
+            self.carried_delivered_shelf = list(set(self.carried_delivered_shelf))
             # remove from queue and replace it
             new_request = np.random.choice(
                 list(set(self.shelfs) - set(self.request_queue))
             )
-            self.carried_request_shelf.remove(shelf)
+            if shelf in self.carried_request_shelf:
+                self.carried_request_shelf.remove(shelf) 
             self.request_queue[self.request_queue.index(shelf)] = new_request
 
             # also reward the agents **originally only reward the agents when the shelf has been delivered**
