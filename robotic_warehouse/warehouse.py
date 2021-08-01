@@ -639,7 +639,8 @@ class Warehouse(gym.Env):
                     self.carried_request_shelf = list(set(self.carried_request_shelf))
             elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:            
                 if not self._is_highway(agent.x, agent.y):  
-                    if (agent.x, agent.y) == (agent.carrying_shelf.x, agent.carrying_shelf.y):
+                    if (agent.x, agent.y) == (agent.carrying_shelf.x, agent.carrying_shelf.y) \
+                        and agent.carrying_shelf in self.carried_delivered_shelf:
                         self.carried_delivered_shelf.remove(agent.carrying_shelf)           
                     agent.carrying_shelf = None                    
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
