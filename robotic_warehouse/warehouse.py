@@ -581,6 +581,8 @@ class Warehouse(gym.Env):
             agent.req_action = Action.NOOP
 
         rewards = np.zeros(self.n_agents)
+        carried_delivered_shelf = []
+        carried_request_shelf = []
 
         for agent in self.agents:
             agent.prev_x, agent.prev_y = agent.x, agent.y
@@ -595,30 +597,43 @@ class Warehouse(gym.Env):
                 shelf_id = self.grid[_LAYER_SHELFS, agent.y, agent.x]
                 if shelf_id:
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
+                    # carried_shelf.append(agent.carrying_shelf)
+                    carried_request_shelf.append(agent.carrying_shelf)
             elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:
                 if not self._is_highway(agent.x, agent.y):
+                    if agent.carrying_shelf in self.request_queue:
+                        carried_request_shelf.remove(agent.carrying_shelf)
+                        carried_delivered_shelf.append(agent.carrying_shelf)
                     agent.carrying_shelf = None
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
                         ## might need to change this
                         # rewards[agent.id - 1] += 0.5
                         rewards[agent.id - 1] += 1
 
-                    agent.has_delivered = False
+                    agent.has_delivered = False                
+
+
 
             ## Add the newly designed rewards (non-sparse)
-            ## Three possible scenarios for non-delivering actions
             pos = np.array([agent.x, agent.y])
-            # if agent.req_action == Action.TOGGLE_LOAD and not agent.carrying_shelf:
-            #     shelf_pos = np.array([])
             goals = np.array([list(self.goals[0]), list(self.goals[1])])
             dist = self.grid_size[0] * self.grid_size[1]
-            # print(pos)
-            # print(goals)
+
             request_shelf_ids = [shelf.id for shelf in self.request_queue]            
             request_shelf_coordinates = \
                 [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in request_shelf_ids]
-            # print(request_shelf_ids)
+            print(request_shelf_ids)
             # print(request_shelf_coordinates)
+
+            # carried_delivered_shelf_ids = [shelf.id for shelf in carried_delivered_shelf]            
+            carried_request_shelf_ids = [shelf.id for shelf in carried_request_shelf]
+            print(carried_request_shelf_ids)
+            uncarried_request_shelf_ids = list(set(request_shelf_ids) - set(carried_request_shelf_ids))
+            uncarried_request_shelf_coordinates = \
+                [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in uncarried_request_shelf_ids]
+            print(uncarried_request_shelf_ids)
+            # print(uncarried_request_shelf_coordinates)
+
             if agent.carrying_shelf:
                 if not agent.has_delivered:
                     ## Going to the goal location ASAP
@@ -641,15 +656,15 @@ class Warehouse(gym.Env):
             #             agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
             #             rewards[agent_id - 1] += 1
             else: 
-                ## Going to the closest untaken requested shelf ASAP
+                ## Going to the closest uncarried requested shelf ASAP                
                 if self.reward_type == RewardType.GLOBAL:
-                    rewards += max([self._reward(pos, coord, dist) for coord in request_shelf_coordinates])
+                    rewards += max([self._reward(pos, coord, dist) for coord in uncarried_request_shelf_coordinates])
                 elif self.reward_type == RewardType.INDIVIDUAL:
                     agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                    rewards[agent_id - 1] += max([self._reward(pos, coord, dist) for coord in request_shelf_coordinates])
+                    rewards[agent_id - 1] += max([self._reward(pos, coord, dist) for coord in uncarried_request_shelf_coordinates])
                 elif self.reward_type == RewardType.TWO_STAGE:
                     agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                    rewards[agent_id - 1] += max([self._reward(pos, coord, dist) for coord in request_shelf_coordinates])
+                    rewards[agent_id - 1] += max([self._reward(pos, coord, dist) for coord in uncarried_request_shelf_coordinates])
 
 
         self._recalc_grid()
