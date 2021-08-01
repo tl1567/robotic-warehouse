@@ -615,8 +615,12 @@ class Warehouse(gym.Env):
             # print(pos)
             # print(goals)
             # print(self.grid)
+            # shelf_id = self.grid[_LAYER_SHELFS, agent.y, agent.x]
+            # shelf = self.shelfs[shelf_id - 1]
+            # print(shelf)
             if agent.carrying_shelf:
                 if not agent.has_delivered:
+                    ## Going to the goal location ASAP
                     if self.reward_type == RewardType.GLOBAL:
                         rewards += max(self._reward(pos, goals[0], dist), self._reward(pos, goals[1], dist))
                     elif self.reward_type == RewardType.INDIVIDUAL:
@@ -626,6 +630,7 @@ class Warehouse(gym.Env):
                         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
                         rewards[agent_id - 1] += 1
             #     else: 
+            #         ## Returning the delivered shelf to an empty shelf location ASAP
             #         if self.reward_type == RewardType.GLOBAL:
             #             rewards += self._reward(pos, shelf_pos, dist)
             #         elif self.reward_type == RewardType.INDIVIDUAL:
@@ -634,7 +639,7 @@ class Warehouse(gym.Env):
             #         elif self.reward_type == RewardType.TWO_STAGE:
             #             agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
             #             rewards[agent_id - 1] += 1
-            # else: 
+            # # else: 
             #     if self.reward_type == RewardType.GLOBAL:
             #         rewards += max(self._reward(pos, goals[0], dist), self._reward(pos, goals[1], dist))
             #     elif self.reward_type == RewardType.INDIVIDUAL:
@@ -671,7 +676,7 @@ class Warehouse(gym.Env):
             ## Keep the following sparse rewards
 
             if self.reward_type == RewardType.GLOBAL:
-                rewards += 1
+                rewards += 2
             elif self.reward_type == RewardType.INDIVIDUAL:
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
                 # rewards[agent_id - 1] += 1
