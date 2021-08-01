@@ -602,11 +602,11 @@ class Warehouse(gym.Env):
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
                     # self.carried_shelf.append(agent.carrying_shelf)
                     self.carried_request_shelf.append(agent.carrying_shelf)
-            elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:
-                if not [agent.x, agent.y] in self.goals:
-                        self.carried_delivered_shelf.remove(agent.carrying_shelf)
+            elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:                        
                 if not self._is_highway(agent.x, agent.y):                    
                     agent.carrying_shelf = None
+                    if agent.has_delivered:
+                        self.carried_delivered_shelf.remove(agent.carrying_shelf)
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
                         ## might need to change this
                         # rewards[agent.id - 1] += 0.5
