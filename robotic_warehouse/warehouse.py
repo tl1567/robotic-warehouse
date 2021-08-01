@@ -616,7 +616,7 @@ class Warehouse(gym.Env):
             # print(goals)
             # print(self.grid)
             if agent.carrying_shelf:
-                if not agent.has_delivered and agent.req_action == Action.FORWARD:
+                if not agent.has_delivered:
                     if self.reward_type == RewardType.GLOBAL:
                         rewards += max(self._reward(pos, goals[0], dist), self._reward(pos, goals[1], dist))
                     elif self.reward_type == RewardType.INDIVIDUAL:
