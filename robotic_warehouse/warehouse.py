@@ -600,22 +600,22 @@ class Warehouse(gym.Env):
             [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.delivered_shelf_ids]
 
         self.carried_delivered_shelf_ids = [shelf.id for shelf in self.carried_delivered_shelf]      
-        print("carried and delivered:", self.carried_delivered_shelf_ids)
+        # print("carried and delivered:", self.carried_delivered_shelf_ids)
         self.carried_delivered_shelf_coordinates = \
             [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.carried_delivered_shelf_ids]
 
         self.carried_request_shelf_ids = [shelf.id for shelf in self.carried_request_shelf]
-        print("carried and under request:", self.carried_request_shelf_ids)
+        # print("carried and under request:", self.carried_request_shelf_ids)
         self.carried_request_shelf_coordinates = \
             [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.carried_request_shelf_ids]
 
         self.uncarried_request_shelf_ids = list(set(self.request_shelf_ids) - set(self.carried_request_shelf_ids))
-        print("uncarried and under request:", self.uncarried_request_shelf_ids)
+        # print("uncarried and under request:", self.uncarried_request_shelf_ids)
         self.uncarried_request_shelf_coordinates = \
             [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.uncarried_request_shelf_ids]
             
         self.uncarried_delivered_shelf_ids = list(set(self.delivered_shelf_ids) - set(self.carried_delivered_shelf_ids)) 
-        print("uncarried and delivered:", self.uncarried_delivered_shelf_ids)
+        # print("uncarried and delivered:", self.uncarried_delivered_shelf_ids)
         self.uncarried_delivered_shelf_coordinates = \
             [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.uncarried_delivered_shelf_ids]
 
