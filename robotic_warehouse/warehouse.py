@@ -591,33 +591,33 @@ class Warehouse(gym.Env):
         goals = np.array([list(self.goals[0]), list(self.goals[1])])
         dist = self.grid_size[0] * self.grid_size[1]
 
-        request_shelf_ids = [shelf.id for shelf in self.request_queue]            
-        # request_shelf_coordinates = \
-        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in request_shelf_ids]
+        self.request_shelf_ids = [shelf.id for shelf in self.request_queue]            
+        # self.request_shelf_coordinates = \
+        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.request_shelf_ids]
 
-        # delivered_shelf_ids = [shelf.id for shelf in self.delivered_shelf]
-        # delivered_shelf_coordinates = \
-        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in delivered_shelf_ids]
+        # self.delivered_shelf_ids = [shelf.id for shelf in self.delivered_shelf]
+        # self.delivered_shelf_coordinates = \
+        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.delivered_shelf_ids]
 
-        # carried_delivered_shelf_ids = [shelf.id for shelf in self.carried_delivered_shelf]      
-        # print("carried and delivered:", carried_delivered_shelf_ids)
-        # carried_delivered_shelf_coordinates = \
-        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in carried_delivered_shelf_ids]
+        # self.carried_delivered_shelf_ids = [shelf.id for shelf in self.carried_delivered_shelf]      
+        # print("carried and delivered:", self.carried_delivered_shelf_ids)
+        # self.carried_delivered_shelf_coordinates = \
+        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.carried_delivered_shelf_ids]
 
-        carried_request_shelf_ids = [shelf.id for shelf in self.carried_request_shelf]
-        # print("carried and under request:", carried_request_shelf_ids)
-        carried_request_shelf_coordinates = \
-            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in carried_request_shelf_ids]
+        self.carried_request_shelf_ids = [shelf.id for shelf in self.carried_request_shelf]
+        # print("carried and under request:", self.carried_request_shelf_ids)
+        self.carried_request_shelf_coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.carried_request_shelf_ids]
 
-        uncarried_request_shelf_ids = list(set(request_shelf_ids) - set(carried_request_shelf_ids))
-        # print("uncarried and under request:", uncarried_request_shelf_ids)
-        uncarried_request_shelf_coordinates = \
-            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in uncarried_request_shelf_ids]
+        self.uncarried_request_shelf_ids = list(set(self.request_shelf_ids) - set(self.carried_request_shelf_ids))
+        # print("uncarried and under request:", self.uncarried_request_shelf_ids)
+        self.uncarried_request_shelf_coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.uncarried_request_shelf_ids]
             
-        # uncarried_delivered_shelf_ids = list(set(delivered_shelf_ids) - set(carried_delivered_shelf_ids)) 
-        # print("uncarried and delivered:", uncarried_delivered_shelf_ids)
-        # uncarried_delivered_shelf_coordinates = \
-        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in uncarried_delivered_shelf_ids]
+        # self.uncarried_delivered_shelf_ids = list(set(self.delivered_shelf_ids) - set(self.carried_delivered_shelf_ids)) 
+        # print("uncarried and delivered:", self.uncarried_delivered_shelf_ids)
+        # self.uncarried_delivered_shelf_coordinates = \
+        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.uncarried_delivered_shelf_ids]
 
 
 
@@ -668,27 +668,27 @@ class Warehouse(gym.Env):
                 #     ## Returning the delivered shelf to an empty shelf location ASAP
                 #     if self.reward_type == RewardType.GLOBAL:
                 #         rewards += max([self._reward(pos, coord, dist) \
-                #             for coord in (carried_delivered_shelf_coordinates + carried_request_shelf_coordinates)])
+                #             for coord in (self.carried_delivered_shelf_coordinates + self.carried_request_shelf_coordinates)])
                 #     elif self.reward_type == RewardType.INDIVIDUAL:
                 #         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
                 #         rewards[agent_id - 1] += max([self._reward(pos, coord, dist) \
-                #             for coord in (carried_delivered_shelf_coordinates + carried_request_shelf_coordinates)])
+                #             for coord in (self.carried_delivered_shelf_coordinates + self.carried_request_shelf_coordinates)])
                 #     elif self.reward_type == RewardType.TWO_STAGE:
                 #         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
                 #         rewards[agent_id - 1] += max([self._reward(pos, coord, dist) \
-                #             for coord in (carried_delivered_shelf_coordinates + carried_request_shelf_coordinates)])
+                #             for coord in (self.carried_delivered_shelf_coordinates + self.carried_request_shelf_coordinates)])
             else: 
                 ## Going to the closest uncarried requested shelf ASAP
-                if not len(uncarried_request_shelf_coordinates):
-                    reward = max([self._reward(pos, coord, dist) for coord in uncarried_request_shelf_coordinates])
-                    if self.reward_type == RewardType.GLOBAL:
-                        rewards += reward
-                    elif self.reward_type == RewardType.INDIVIDUAL:
-                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += reward
-                    elif self.reward_type == RewardType.TWO_STAGE:
-                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += reward
+                # if not len(self.uncarried_request_shelf_coordinates):
+                reward = max([self._reward(pos, coord, dist) for coord in self.uncarried_request_shelf_coordinates])
+                if self.reward_type == RewardType.GLOBAL:
+                    rewards += reward
+                elif self.reward_type == RewardType.INDIVIDUAL:
+                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                    rewards[agent_id - 1] += reward
+                elif self.reward_type == RewardType.TWO_STAGE:
+                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                    rewards[agent_id - 1] += reward
 
 
         self._recalc_grid()
