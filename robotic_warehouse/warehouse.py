@@ -592,32 +592,32 @@ class Warehouse(gym.Env):
         dist = self.grid_size[0] * self.grid_size[1]
 
         self.request_shelf_ids = [shelf.id for shelf in self.request_queue]            
-        # self.request_shelf_coordinates = \
-        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.request_shelf_ids]
+        self.request_shelf_coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.request_shelf_ids]
 
-        # self.delivered_shelf_ids = [shelf.id for shelf in self.delivered_shelf]
-        # self.delivered_shelf_coordinates = \
-        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.delivered_shelf_ids]
+        self.delivered_shelf_ids = [shelf.id for shelf in self.delivered_shelf]
+        self.delivered_shelf_coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.delivered_shelf_ids]
 
-        # self.carried_delivered_shelf_ids = [shelf.id for shelf in self.carried_delivered_shelf]      
-        # print("carried and delivered:", self.carried_delivered_shelf_ids)
-        # self.carried_delivered_shelf_coordinates = \
-        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.carried_delivered_shelf_ids]
+        self.carried_delivered_shelf_ids = [shelf.id for shelf in self.carried_delivered_shelf]      
+        print("carried and delivered:", self.carried_delivered_shelf_ids)
+        self.carried_delivered_shelf_coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.carried_delivered_shelf_ids]
 
         self.carried_request_shelf_ids = [shelf.id for shelf in self.carried_request_shelf]
-        # print("carried and under request:", self.carried_request_shelf_ids)
+        print("carried and under request:", self.carried_request_shelf_ids)
         self.carried_request_shelf_coordinates = \
             [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.carried_request_shelf_ids]
 
         self.uncarried_request_shelf_ids = list(set(self.request_shelf_ids) - set(self.carried_request_shelf_ids))
-        # print("uncarried and under request:", self.uncarried_request_shelf_ids)
+        print("uncarried and under request:", self.uncarried_request_shelf_ids)
         self.uncarried_request_shelf_coordinates = \
             [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.uncarried_request_shelf_ids]
             
-        # self.uncarried_delivered_shelf_ids = list(set(self.delivered_shelf_ids) - set(self.carried_delivered_shelf_ids)) 
-        # print("uncarried and delivered:", self.uncarried_delivered_shelf_ids)
-        # self.uncarried_delivered_shelf_coordinates = \
-        #     [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.uncarried_delivered_shelf_ids]
+        self.uncarried_delivered_shelf_ids = list(set(self.delivered_shelf_ids) - set(self.carried_delivered_shelf_ids)) 
+        print("uncarried and delivered:", self.uncarried_delivered_shelf_ids)
+        self.uncarried_delivered_shelf_coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.uncarried_delivered_shelf_ids]
 
 
 
@@ -639,9 +639,9 @@ class Warehouse(gym.Env):
                     self.carried_request_shelf = list(set(self.carried_request_shelf))
             elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:            
                 if not self._is_highway(agent.x, agent.y):  
-                    # if (agent.x, agent.y) == (agent.carrying_shelf.x, agent.carrying_shelf.y) \
-                    #     and agent.carrying_shelf in self.carried_delivered_shelf:
-                    #     self.carried_delivered_shelf.remove(agent.carrying_shelf)           
+                    if (agent.x, agent.y) == (agent.carrying_shelf.x, agent.carrying_shelf.y)\
+                        and agent.carrying_shelf in self.carried_delivered_shelf:
+                        self.carried_delivered_shelf.remove(agent.carrying_shelf)           
                     agent.carrying_shelf = None                    
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
                         ## might need to change this
@@ -706,10 +706,10 @@ class Warehouse(gym.Env):
                 continue
             # a shelf was successfully delivered.
             shelf_delivered = True
-            # self.delivered_shelf.append(shelf)
-            # self.delivered_shelf = list(set(self.delivered_shelf))
-            # self.carried_delivered_shelf.append(shelf)
-            # self.carried_delivered_shelf = list(set(self.carried_delivered_shelf))
+            self.delivered_shelf.append(shelf)
+            self.delivered_shelf = list(set(self.delivered_shelf))
+            self.carried_delivered_shelf.append(shelf)
+            self.carried_delivered_shelf = list(set(self.carried_delivered_shelf))
             # remove from queue and replace it
             new_request = np.random.choice(
                 list(set(self.shelfs) - set(self.request_queue))
