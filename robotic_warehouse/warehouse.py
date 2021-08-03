@@ -589,7 +589,8 @@ class Warehouse(gym.Env):
 
         pos = np.array([agent.x, agent.y])
         goals = np.array([list(self.goals[0]), list(self.goals[1])])
-        dist = self.grid_size[0] * self.grid_size[1]
+        # dist = self.grid_size[0] * self.grid_size[1]
+        dist = 0
 
         self.request_shelf_ids = [shelf.id for shelf in self.request_queue]            
         self.request_shelf_coordinates = \
