@@ -719,8 +719,8 @@ class Warehouse(gym.Env):
             new_request = np.random.choice(
                 list(set(self.shelfs) - set(self.request_queue))
             )
-            # if shelf in self.carried_request_shelf:
-            self.carried_request_shelf.remove(shelf) 
+            if shelf in self.carried_request_shelf:
+                self.carried_request_shelf.remove(shelf) 
             self.request_queue[self.request_queue.index(shelf)] = new_request
 
             # also reward the agents **originally only reward the agents when the shelf has been delivered**
