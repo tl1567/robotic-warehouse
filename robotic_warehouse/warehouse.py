@@ -779,10 +779,9 @@ class Warehouse(gym.Env):
                         rewards[agent.id - 1] += 1                    
                     agent.has_delivered = False          
 
+            
+            self.update_shelf_properties()
             rewards = self.nonsparse_reward(agent, pos, goals, dist, rewards)
-            # self.update_shelf_properties()
-            # print(agent.carrying_shelf in self.request_queue)
-
             
 
 
