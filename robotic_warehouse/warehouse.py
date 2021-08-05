@@ -636,8 +636,9 @@ class Warehouse(gym.Env):
                 if shelf_id:
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
                     # self.carried_shelf.append(agent.carrying_shelf)
-                    self.carried_request_shelf.append(agent.carrying_shelf)
-                    self.carried_request_shelf = list(set(self.carried_request_shelf))
+                    if agent.carrying_shelf in self.request_queue:
+                        self.carried_request_shelf.append(agent.carrying_shelf)
+                        self.carried_request_shelf = list(set(self.carried_request_shelf))
             elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:            
                 if not self._is_highway(agent.x, agent.y):  
                     if (agent.x, agent.y) == (agent.carrying_shelf.x, agent.carrying_shelf.y)\
@@ -656,17 +657,31 @@ class Warehouse(gym.Env):
             ## Add the newly designed rewards (non-sparse)            
             if agent.carrying_shelf:
                 if not agent.has_delivered:
-                    ## Going to the goal location ASAP
-                    if self.reward_type == RewardType.GLOBAL:
-                        rewards += max([self._reward(pos, goal, dist) for goal in goals])
-                    elif self.reward_type == RewardType.INDIVIDUAL:
-                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += max([self._reward(pos, goal, dist) for goal in goals])
-                    elif self.reward_type == RewardType.TWO_STAGE:
-                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += max([self._reward(pos, goal, dist) for goal in goals])
+                    if agent.carrying_shelf in self.request_queue:
+                        ## Carrying a requested shelf which is undelivered
+                        ## Go to the goal location ASAP
+                        if self.reward_type == RewardType.GLOBAL:
+                            rewards += max([self._reward(pos, goal, dist) for goal in goals])
+                        elif self.reward_type == RewardType.INDIVIDUAL:
+                            agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                            rewards[agent_id - 1] += max([self._reward(pos, goal, dist) for goal in goals])
+                        elif self.reward_type == RewardType.TWO_STAGE:
+                            agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                            rewards[agent_id - 1] += max([self._reward(pos, goal, dist) for goal in goals])
+                    else: 
+                        ## Carrying an unrequested shelf (which is undelivered)
+                        ## Undesirable behavior; assign negative reward
+                        if self.reward_type == RewardType.GLOBAL:
+                            rewards -= 2
+                        elif self.reward_type == RewardType.INDIVIDUAL:
+                            agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                            rewards[agent_id - 1] -= 2
+                        elif self.reward_type == RewardType.TWO_STAGE:
+                            agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                            rewards[agent_id - 1] -= 1
                 else: 
-                    ## Returning the delivered shelf to an empty shelf location ASAP
+                    ## Carrying a delivered shelf
+                    ## Return the delivered shelf to an empty shelf location ASAP
                     if len(self.carried_delivered_shelf_ids + self.carried_request_shelf_ids):
                         reward = max([self._reward(pos, coord, dist) \
                                 for coord in (self.carried_delivered_shelf_coordinates + self.carried_request_shelf_coordinates)])
@@ -679,13 +694,15 @@ class Warehouse(gym.Env):
                         rewards[agent_id - 1] += reward
                     elif self.reward_type == RewardType.TWO_STAGE:
                         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += reward             
+                        rewards[agent_id - 1] += reward                                                   
             else: 
-                ## Going to the closest uncarried requested shelf ASAP
-                if len(self.uncarried_request_shelf_ids):
-                    reward = max([self._reward(pos, coord, dist) for coord in self.uncarried_request_shelf_coordinates])
-                else: 
-                    reward = 0
+                ## Not carrying any shelf
+                ## Go to the closest uncarried requested shelf ASAP
+                # if len(self.uncarried_request_shelf_ids):
+                #     reward = max([self._reward(pos, coord, dist) for coord in self.uncarried_request_shelf_coordinates])
+                # else: 
+                #     reward = 0
+                reward = max([self._reward(pos, coord, dist) for coord in self.uncarried_request_shelf_coordinates])
                 if self.reward_type == RewardType.GLOBAL:
                     rewards += reward
                 elif self.reward_type == RewardType.INDIVIDUAL:
