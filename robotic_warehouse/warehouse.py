@@ -227,9 +227,12 @@ class Warehouse(gym.Env):
         self.request_queue_size = request_queue_size
         self.request_queue = []
 
-        self.carried_delivered_shelf = []
-        self.carried_request_shelf = []
-        self.delivered_shelf = []
+        self.requested_delivered_shelf = []
+        self.carried_shelf = []
+
+        # self.carried_delivered_shelf = []
+        # self.carried_requested_shelf = []        
+        # self.requested_undelivered_shelf = []
 
         self.agents: List[Agent] = []
 
@@ -509,6 +512,155 @@ class Warehouse(gym.Env):
         return reward
     
 
+
+    def shelf_ids_coordinates(self, shelf_list):
+        """
+        Compute the shelf ids and their coordinates
+        """
+        ids = [shelf.id for shelf in shelf_list]
+        coordinates = \
+            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in ids]
+        return ids, coordinates
+
+    
+    def update_shelf_properties(self):
+        ## Shelves can be (1) requested or unrequested; (2) carried or uncarried; 
+        ## (3) delivered or undelivered (for requested only)
+
+        self.requested_shelf_ids, self.requested_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.request_queue)
+        # print("requested:", self.requested_shelf_ids)
+        
+
+        self.unrequested_shelf = list(set(self.shelfs) - set(self.request_queue))
+        self.unrequested_shelf_ids, self.unrequested_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.unrequested_shelf)
+        # print("unrequested:", self.requested_shelf_ids) 
+        
+
+        ## *** update in each step
+        self.requested_delivered_shelf_ids, self.requested_delivered_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.requested_delivered_shelf)
+        # print("requested and delivered", self.requested_delivered_shelf_ids)
+        
+
+        self.requested_undelivered_shelf = list(set(self.request_queue) - set(self.requested_delivered_shelf))
+        self.requested_undelivered_shelf_ids, self.requested_undelivered_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.requested_undelivered_shelf)
+        # print("requested and undelivered", self.requested_undelivered_shelf_ids)
+        
+
+        ## *** update in each step
+        self.carried_shelf_ids, self.carried_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.carried_shelf)
+        # print("carried", self.carried_shelf_ids)
+
+
+        self.uncarried_shelf = list(set(self.shelfs) - set(self.carried_shelf))
+        self.uncarried_shelf_ids, self.unrcarried_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.uncarried_shelf)
+        # print("uncarried", self.uncarried_shelf_ids)
+
+
+
+        self.carried_delivered_shelf = list(set(self.carried_shelf) & set(self.requested_delivered_shelf))  
+        self.carried_delivered_shelf_ids, self.carried_delivered_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.carried_delivered_shelf)   
+        # print("carried and delivered:", self.carried_delivered_shelf_ids)
+
+        self.carried_undelivered_shelf = list(set(self.carried_shelf) & set(self.requested_undelivered_shelf))  
+        self.carried_undelivered_shelf_ids, self.carried_delivered_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.carried_undelivered_shelf)
+        # print("carried and undelivered:", self.carried_undelivered_shelf_ids)
+
+
+        self.uncarried_delivered_shelf = list(set(self.requested_delivered_shelf) - set(self.carried_delivered_shelf)) 
+        self.uncarried_delivered_shelf_ids, self.uncarried_delivered_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.uncarried_delivered_shelf)
+        # print("uncarried and delivered:", self.uncarried_delivered_shelf_ids)
+        
+
+        self.uncarried_undelivered_shelf = list(set(self.requested_undelivered_shelf) - set(self.uncarried_delivered_shelf)) 
+        self.uncarried_undelivered_shelf_ids, self.uncarried_undelivered_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.uncarried_undelivered_shelf)
+        # print("uncarried and undelivered:", self.uncarried_undelivered_shelf_ids)
+        
+
+        self.carried_requested_shelf = list(set(self.carried_shelf) & set(self.requested_undelivered_shelf)) 
+        self.carried_requested_shelf_ids, self.carried_requested_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.carried_requested_shelf)
+        # self.carried_requested_shelf_ids = [shelf.id for shelf in self.carried_request_shelf]
+        # print("carried and requested:", self.carried_requested_shelf_ids)
+
+
+        self.uncarried_requested_shelf = list(set(self.uncarried_shelf) & set(self.requested_undelivered_shelf)) 
+        self.uncarried_requested_shelf_ids, self.uncarried_requested_shelf_coordinates = \
+            self.shelf_ids_coordinates(self.uncarried_requested_shelf)
+        # print("uncarried and requested:", self.uncarried_requested_shelf_ids)
+
+
+    def nonsparse_reward(self, agent, pos, goals, dist, rewards):
+    ## Add the newly designed rewards (non-sparse)            
+        if agent.carrying_shelf:
+            if agent.carrying_shelf in self.carried_undelivered_shelf:
+                if agent.carrying_shelf in self.request_queue:
+                    ## Carrying a requested shelf which is undelivered
+                    ## Go to the goal location ASAP
+                    if self.reward_type == RewardType.GLOBAL:
+                        rewards += max([self._reward(pos, goal, dist) for goal in goals])
+                    elif self.reward_type == RewardType.INDIVIDUAL:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        rewards[agent_id - 1] += max([self._reward(pos, goal, dist) for goal in goals])
+                    elif self.reward_type == RewardType.TWO_STAGE:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        rewards[agent_id - 1] += max([self._reward(pos, goal, dist) for goal in goals])
+                else: 
+                    ## Carrying an unrequested shelf (which is definitely undelivered)
+                    ## Undesirable behavior; assign negative reward
+                    if self.reward_type == RewardType.GLOBAL:
+                        rewards += -2
+                    elif self.reward_type == RewardType.INDIVIDUAL:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        rewards[agent_id - 1] += -2
+                    elif self.reward_type == RewardType.TWO_STAGE:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        rewards[agent_id - 1] += -1
+            else: 
+                ## Carrying a delivered shelf
+                ## Return the delivered shelf to an empty shelf location ASAP
+                if len(self.carried_requested_shelf):
+                    reward = max([self._reward(pos, coord, dist) \
+                        for coord in (self.carried_requested_shelf_coordinates)])
+                else: 
+                    reward = 0
+                if self.reward_type == RewardType.GLOBAL:
+                    rewards += reward
+                elif self.reward_type == RewardType.INDIVIDUAL:
+                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                    rewards[agent_id - 1] += reward
+                elif self.reward_type == RewardType.TWO_STAGE:
+                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                    rewards[agent_id - 1] += reward                                                   
+        else: 
+            ## Not carrying any shelf
+            ## Go to the closest uncarried requested shelf ASAP
+            # if len(self.uncarried_request_shelf_ids):
+            #     reward = max([self._reward(pos, coord, dist) for coord in self.uncarried_requested_shelf_coordinates])
+            # else: 
+            #     reward = 0
+            reward = max([self._reward(pos, coord, dist) for coord in self.uncarried_requested_shelf_coordinates])
+            if self.reward_type == RewardType.GLOBAL:
+                rewards += reward
+            elif self.reward_type == RewardType.INDIVIDUAL:
+                agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                rewards[agent_id - 1] += reward
+            elif self.reward_type == RewardType.TWO_STAGE:
+                agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                rewards[agent_id - 1] += reward
+
+        return rewards
+
+
     def step(
         self, actions: List[Action]
     ) -> Tuple[List[np.ndarray], List[float], List[bool], Dict]:
@@ -587,38 +739,16 @@ class Warehouse(gym.Env):
         rewards = np.zeros(self.n_agents)
         
 
-        pos = np.array([agent.x, agent.y])
-        goals = np.array([list(self.goals[0]), list(self.goals[1])])
+        pos = np.array([agent.x, agent.y]) # coordinates of the agent
+        goals = np.array([list(self.goals[0]), list(self.goals[1])]) # coordinates of the goal locations
         # dist = self.grid_size[0] * self.grid_size[1]
         dist = 0
 
-        self.request_shelf_ids = [shelf.id for shelf in self.request_queue]            
-        self.request_shelf_coordinates = \
-            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.request_shelf_ids]
+        # print("Step ", self._cur_steps)
 
-        self.delivered_shelf_ids = [shelf.id for shelf in self.delivered_shelf]
-        self.delivered_shelf_coordinates = \
-            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.delivered_shelf_ids]
-
-        self.carried_delivered_shelf_ids = [shelf.id for shelf in self.carried_delivered_shelf]      
-        # print("carried and delivered:", self.carried_delivered_shelf_ids)
-        self.carried_delivered_shelf_coordinates = \
-            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.carried_delivered_shelf_ids]
-
-        self.carried_request_shelf_ids = [shelf.id for shelf in self.carried_request_shelf]
-        # print("carried and under request:", self.carried_request_shelf_ids)
-        self.carried_request_shelf_coordinates = \
-            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.carried_request_shelf_ids]
-
-        self.uncarried_request_shelf_ids = list(set(self.request_shelf_ids) - set(self.carried_request_shelf_ids))
-        # print("uncarried and under request:", self.uncarried_request_shelf_ids)
-        self.uncarried_request_shelf_coordinates = \
-            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.uncarried_request_shelf_ids]
+        self.update_shelf_properties()
             
-        self.uncarried_delivered_shelf_ids = list(set(self.delivered_shelf_ids) - set(self.carried_delivered_shelf_ids)) 
-        # print("uncarried and delivered:", self.uncarried_delivered_shelf_ids)
-        self.uncarried_delivered_shelf_coordinates = \
-            [np.concatenate(np.where(self.grid[_LAYER_SHELFS] == shelf_id)) for shelf_id in self.uncarried_delivered_shelf_ids]
+        
 
 
 
@@ -628,89 +758,32 @@ class Warehouse(gym.Env):
             if agent.req_action == Action.FORWARD:
                 agent.x, agent.y = agent.req_location(self.grid_size)
                 if agent.carrying_shelf:
-                    agent.carrying_shelf.x, agent.carrying_shelf.y = agent.x, agent.y
+                    agent.carrying_shelf.x, agent.carrying_shelf.y = agent.x, agent.y                
             elif agent.req_action in [Action.LEFT, Action.RIGHT]:
                 agent.dir = agent.req_direction()
             elif agent.req_action == Action.TOGGLE_LOAD and not agent.carrying_shelf:
                 shelf_id = self.grid[_LAYER_SHELFS, agent.y, agent.x]
                 if shelf_id:
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
-                    # self.carried_shelf.append(agent.carrying_shelf)
-                    if agent.carrying_shelf in self.request_queue:
-                        self.carried_request_shelf.append(agent.carrying_shelf)
-                        self.carried_request_shelf = list(set(self.carried_request_shelf))
+                    self.carried_shelf.append(agent.carrying_shelf)               
             elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:            
                 if not self._is_highway(agent.x, agent.y):  
-                    if (agent.x, agent.y) == (agent.carrying_shelf.x, agent.carrying_shelf.y)\
-                        and agent.carrying_shelf in self.carried_delivered_shelf:
-                        self.carried_delivered_shelf.remove(agent.carrying_shelf)           
+                    # if (agent.x, agent.y) == self.goals and agent.carrying_shelf in self.carried_delivered_shelf:
+                    #     self.carried_delivered_shelf.remove(agent.carrying_shelf)  
+                    #     self.uncarried_delivered_shelf.append(agent.carrying_shelf)
+                    self.carried_shelf.remove(agent.carrying_shelf)         
                     agent.carrying_shelf = None                    
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
                         ## might need to change this
                         # rewards[agent.id - 1] += 0.5
-                        rewards[agent.id - 1] += 1
-
+                        rewards[agent.id - 1] += 1                    
                     agent.has_delivered = False          
 
+            rewards = self.nonsparse_reward(agent, pos, goals, dist, rewards)
+            # self.update_shelf_properties()
+            # print(agent.carrying_shelf in self.request_queue)
 
-
-            ## Add the newly designed rewards (non-sparse)            
-            if agent.carrying_shelf:
-                if not agent.has_delivered:
-                    if agent.carrying_shelf in self.request_queue:
-                        ## Carrying a requested shelf which is undelivered
-                        ## Go to the goal location ASAP
-                        if self.reward_type == RewardType.GLOBAL:
-                            rewards += max([self._reward(pos, goal, dist) for goal in goals])
-                        elif self.reward_type == RewardType.INDIVIDUAL:
-                            agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                            rewards[agent_id - 1] += max([self._reward(pos, goal, dist) for goal in goals])
-                        elif self.reward_type == RewardType.TWO_STAGE:
-                            agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                            rewards[agent_id - 1] += max([self._reward(pos, goal, dist) for goal in goals])
-                    else: 
-                        ## Carrying an unrequested shelf (which is undelivered)
-                        ## Undesirable behavior; assign negative reward
-                        if self.reward_type == RewardType.GLOBAL:
-                            rewards -= 2
-                        elif self.reward_type == RewardType.INDIVIDUAL:
-                            agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                            rewards[agent_id - 1] -= 2
-                        elif self.reward_type == RewardType.TWO_STAGE:
-                            agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                            rewards[agent_id - 1] -= 1
-                else: 
-                    ## Carrying a delivered shelf
-                    ## Return the delivered shelf to an empty shelf location ASAP
-                    if len(self.carried_delivered_shelf_ids + self.carried_request_shelf_ids):
-                        reward = max([self._reward(pos, coord, dist) \
-                                for coord in (self.carried_delivered_shelf_coordinates + self.carried_request_shelf_coordinates)])
-                    else: 
-                        reward = 0
-                    if self.reward_type == RewardType.GLOBAL:
-                        rewards += reward
-                    elif self.reward_type == RewardType.INDIVIDUAL:
-                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += reward
-                    elif self.reward_type == RewardType.TWO_STAGE:
-                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += reward                                                   
-            else: 
-                ## Not carrying any shelf
-                ## Go to the closest uncarried requested shelf ASAP
-                # if len(self.uncarried_request_shelf_ids):
-                #     reward = max([self._reward(pos, coord, dist) for coord in self.uncarried_request_shelf_coordinates])
-                # else: 
-                #     reward = 0
-                reward = max([self._reward(pos, coord, dist) for coord in self.uncarried_request_shelf_coordinates])
-                if self.reward_type == RewardType.GLOBAL:
-                    rewards += reward
-                elif self.reward_type == RewardType.INDIVIDUAL:
-                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                    rewards[agent_id - 1] += reward
-                elif self.reward_type == RewardType.TWO_STAGE:
-                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                    rewards[agent_id - 1] += reward
+            
 
 
         self._recalc_grid()
@@ -728,19 +801,22 @@ class Warehouse(gym.Env):
                 continue
             # a shelf was successfully delivered.
             shelf_delivered = True
-            self.delivered_shelf.append(shelf)
-            self.delivered_shelf = list(set(self.delivered_shelf))
-            self.carried_delivered_shelf.append(shelf)
-            self.carried_delivered_shelf = list(set(self.carried_delivered_shelf))
+            self.requested_delivered_shelf.append(shelf)
+            self.requested_delivered_shelf = list(set(self.requested_delivered_shelf))
+            # self.carried_delivered_shelf.append(shelf)
+            # self.carried_delivered_shelf = list(set(self.carried_delivered_shelf))
             # remove from queue and replace it
             new_request = np.random.choice(
                 list(set(self.shelfs) - set(self.request_queue))
             )
-            if shelf in self.carried_request_shelf:
-                self.carried_request_shelf.remove(shelf) 
+
+            # if shelf in self.carried_requested_shelf:
+            #     self.carried_requested_shelf.remove(shelf) 
+
             self.request_queue[self.request_queue.index(shelf)] = new_request
 
-            # also reward the agents **originally only reward the agents when the shelf has been delivered**
+            # Also reward the agents based on negative distances
+            # **originally only reward the agents when the shelf has been delivered**
             ## Keep the following sparse rewards
 
             if self.reward_type == RewardType.GLOBAL:
@@ -754,6 +830,8 @@ class Warehouse(gym.Env):
                 self.agents[agent_id - 1].has_delivered = True
                 # rewards[agent_id - 1] += 0.5            
                 rewards[agent_id - 1] += 1  
+
+        print("rewards:", rewards)
 
         if shelf_delivered:
             self._cur_inactive_steps = 0
