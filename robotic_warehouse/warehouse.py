@@ -802,11 +802,8 @@ class Warehouse(gym.Env):
             # a shelf was successfully delivered.
             shelf_delivered = True
 
-            
 
-            
-            
-
+            ###
             for agent in self.agents:
                 if agent.carrying_shelf and (agent.carrying_shelf.x, agent.carrying_shelf.y) == (x, y):
                     agent.has_delivered = True
@@ -818,8 +815,8 @@ class Warehouse(gym.Env):
             self.grid[_LAYER_SHELFS, shelf.y, shelf.x] = shelf_id
             
             
-            print(self.grid[_LAYER_SHELFS, self.shelf_original_coordinates[shelf_id][0], self.shelf_original_coordinates[shelf_id][1]])
-            print(self.grid[_LAYER_SHELFS])
+            # print(self.grid[_LAYER_SHELFS, self.shelf_original_coordinates[shelf_id][0], self.shelf_original_coordinates[shelf_id][1]])
+            # print(self.grid[_LAYER_SHELFS])
 
             self.requested_delivered_shelf.append(shelf)
             self.requested_delivered_shelf = list(set(self.requested_delivered_shelf))
