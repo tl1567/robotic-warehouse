@@ -491,6 +491,8 @@ class Warehouse(gym.Env):
 
         self._recalc_grid()
 
+        self.shelf_original_coordinates = {s.id:[s.y, s.x] for s in self.shelfs}
+
         self.request_queue = list(
             np.random.choice(self.shelfs, size=self.request_queue_size, replace=False)
         )
@@ -748,8 +750,7 @@ class Warehouse(gym.Env):
 
         self.update_shelf_properties()
             
-        
-
+        self._recalc_grid()
 
 
         for agent in self.agents:
@@ -781,7 +782,7 @@ class Warehouse(gym.Env):
 
             
             self.update_shelf_properties()
-            rewards = self.nonsparse_reward(agent, pos, goals, dist, rewards)
+            # rewards = self.nonsparse_reward(agent, pos, goals, dist, rewards)
             
 
 
@@ -800,6 +801,26 @@ class Warehouse(gym.Env):
                 continue
             # a shelf was successfully delivered.
             shelf_delivered = True
+
+            
+
+            
+            
+
+            for agent in self.agents:
+                if agent.carrying_shelf and (agent.carrying_shelf.x, agent.carrying_shelf.y) == (x, y):
+                    agent.has_delivered = True
+                    agent.carrying_shelf = None
+
+            self.grid[_LAYER_SHELFS, y, x] = 0     
+            shelf.y = self.shelf_original_coordinates[shelf_id][0]
+            shelf.x = self.shelf_original_coordinates[shelf_id][1]
+            self.grid[_LAYER_SHELFS, shelf.y, shelf.x] = shelf_id
+            
+            
+            print(self.grid[_LAYER_SHELFS, self.shelf_original_coordinates[shelf_id][0], self.shelf_original_coordinates[shelf_id][1]])
+            print(self.grid[_LAYER_SHELFS])
+
             self.requested_delivered_shelf.append(shelf)
             self.requested_delivered_shelf = list(set(self.requested_delivered_shelf))
             # self.carried_delivered_shelf.append(shelf)
