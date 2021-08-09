@@ -616,17 +616,17 @@ class Warehouse(gym.Env):
                     elif self.reward_type == RewardType.TWO_STAGE:
                         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
                         rewards[agent_id - 1] += max([self._reward(pos, goal, dist) for goal in goals])
-                else: 
-                    ## Carrying an unrequested shelf (which is definitely undelivered)
-                    ## Undesirable behavior; assign negative reward
-                    if self.reward_type == RewardType.GLOBAL:
-                        rewards += -2
-                    elif self.reward_type == RewardType.INDIVIDUAL:
-                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += -2
-                    elif self.reward_type == RewardType.TWO_STAGE:
-                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += -1
+                # else: 
+                #     ## Carrying an unrequested shelf (which is definitely undelivered)
+                #     ## Undesirable behavior; assign negative reward
+                #     if self.reward_type == RewardType.GLOBAL:
+                #         rewards += -2
+                #     elif self.reward_type == RewardType.INDIVIDUAL:
+                #         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                #         rewards[agent_id - 1] += -2
+                #     elif self.reward_type == RewardType.TWO_STAGE:
+                #         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                #         rewards[agent_id - 1] += -1
             else: 
                 ## Carrying a delivered shelf
                 ## Return the delivered shelf to an empty shelf location ASAP
@@ -748,7 +748,7 @@ class Warehouse(gym.Env):
 
         # print("Step ", self._cur_steps)
 
-        self.update_shelf_properties()
+        # self.update_shelf_properties()
             
         self._recalc_grid()
 
@@ -766,7 +766,17 @@ class Warehouse(gym.Env):
                 shelf_id = self.grid[_LAYER_SHELFS, agent.y, agent.x]
                 if shelf_id:
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
-                    self.carried_shelf.append(agent.carrying_shelf)               
+                if agent.carrying_shelf in self.request_queue:
+                    if self.reward_type == RewardType.GLOBAL:
+                        rewards += 1
+                    elif self.reward_type == RewardType.INDIVIDUAL:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        rewards[agent_id - 1] += 1
+                    elif self.reward_type == RewardType.TWO_STAGE:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        self.agents[agent_id - 1].has_delivered = True          
+                        rewards[agent_id - 1] += 0.5  
+                self.carried_shelf.append(agent.carrying_shelf)               
             elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:            
                 if not self._is_highway(agent.x, agent.y):  
                     # if (agent.x, agent.y) == self.goals and agent.carrying_shelf in self.carried_delivered_shelf:
@@ -781,7 +791,7 @@ class Warehouse(gym.Env):
                     agent.has_delivered = False          
 
             
-            self.update_shelf_properties()
+            # self.update_shelf_properties()
             # rewards = self.nonsparse_reward(agent, pos, goals, dist, rewards)
             
 
@@ -848,7 +858,7 @@ class Warehouse(gym.Env):
                 # rewards[agent_id - 1] += 0.5            
                 rewards[agent_id - 1] += 1  
 
-        # print("rewards:", rewards)
+        print("rewards:", rewards)
 
         if shelf_delivered:
             self._cur_inactive_steps = 0
