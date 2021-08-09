@@ -858,7 +858,7 @@ class Warehouse(gym.Env):
                 # rewards[agent_id - 1] += 0.5            
                 rewards[agent_id - 1] += 1  
 
-        print("rewards:", rewards)
+        # print("rewards:", rewards)
 
         if shelf_delivered:
             self._cur_inactive_steps = 0
