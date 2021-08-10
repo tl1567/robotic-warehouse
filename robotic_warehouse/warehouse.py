@@ -770,10 +770,30 @@ class Warehouse(gym.Env):
                 shelf_id = self.grid[_LAYER_SHELFS, agent.y, agent.x]
                 if shelf_id:
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
-                # if agent.carrying_shelf in self.request_queue and (agent.prev_x, agent.prev_y) != (agent.x, agent.y):                     
+                if agent.carrying_shelf in self.request_queue:                     
+                    if self.reward_type == RewardType.GLOBAL:
+                        rewards += 1
+                    elif self.reward_type == RewardType.INDIVIDUAL:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        rewards[agent_id - 1] += 1
+                    elif self.reward_type == RewardType.TWO_STAGE:
+                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                        self.agents[agent_id - 1].has_delivered = True          
+                        rewards[agent_id - 1] += 0.5 
                 self.carried_shelf.append(agent.carrying_shelf)               
             elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:            
-                if not self._is_highway(agent.x, agent.y):  
+                if not self._is_highway(agent.x, agent.y): 
+                    if agent.carrying_shelf in self.request_queue and (agent.x, agent.y) not in self.goals:                     
+                        if self.reward_type == RewardType.GLOBAL:
+                            rewards -= 1
+                        elif self.reward_type == RewardType.INDIVIDUAL:
+                            agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                            rewards[agent_id - 1] -= 1
+                        elif self.reward_type == RewardType.TWO_STAGE:
+                            agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                            self.agents[agent_id - 1].has_delivered = True          
+                            rewards[agent_id - 1] -= 0.5
+
                     # if (agent.x, agent.y) == self.goals and agent.carrying_shelf in self.carried_delivered_shelf:
                     #     self.carried_delivered_shelf.remove(agent.carrying_shelf)  
                     #     self.uncarried_delivered_shelf.append(agent.carrying_shelf)
@@ -784,18 +804,13 @@ class Warehouse(gym.Env):
                         # rewards[agent.id - 1] += 0.5
                         rewards[agent.id - 1] += 1                    
                     agent.has_delivered = False          
+            
+            # if agent.carrying_shelf:
+            #     carry_shelf_id, _ = self.shelf_original_coordinates([agent.carrying_shelf])
+            #     carrying_shelf_y = self.shelf_original_coordinates[carry_shelf_id]
+            #     carrying_shelf_x = self.shelf_original_coordinates[carry_shelf_id]
 
-            if agent.carrying_shelf and agent.carrying_shelf in self.request_queue and \
-                (agent.prev_x, agent.prev_y) != (agent.x, agent.y):
-                if self.reward_type == RewardType.GLOBAL:
-                    rewards += 1
-                elif self.reward_type == RewardType.INDIVIDUAL:
-                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                    rewards[agent_id - 1] += 1
-                elif self.reward_type == RewardType.TWO_STAGE:
-                    agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                    self.agents[agent_id - 1].has_delivered = True          
-                    rewards[agent_id - 1] += 0.5 
+
             
             # self.update_shelf_properties()
             # rewards = self.nonsparse_reward(agent, pos, goals, dist, rewards)
