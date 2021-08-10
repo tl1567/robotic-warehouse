@@ -496,7 +496,6 @@ class Warehouse(gym.Env):
         self.shelf_original_dist_goal = \
             {s.id:min(abs(s.x - list(self.goals[0])[0]), abs(s.x - list(self.goals[1])[0])) \
                 + abs(s.y - list(self.goals[0])[1]) for s in self.shelfs}
-        print(self.shelf_original_dist_goal)
 
         self.request_queue = list(
             np.random.choice(self.shelfs, size=self.request_queue_size, replace=False)
