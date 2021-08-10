@@ -494,7 +494,8 @@ class Warehouse(gym.Env):
         self.shelf_original_coordinates = {s.id:[s.y, s.x] for s in self.shelfs}
 
         self.shelf_original_dist_goal = \
-            {s.id:min(abs(s.x - list(self.goals[0])[0]), abs(s.x - list(self.goals[1])[0])) + abs(s.y - list(self.goals[0])[1]) for s in self.shelfs}
+            {s.id:min(abs(s.x - list(self.goals[0])[0]), abs(s.x - list(self.goals[1])[0])) \
+                + abs(s.y - list(self.goals[0])[1]) for s in self.shelfs}
         print(self.shelf_original_dist_goal)
 
         self.request_queue = list(
@@ -770,7 +771,7 @@ class Warehouse(gym.Env):
                 shelf_id = self.grid[_LAYER_SHELFS, agent.y, agent.x]
                 if shelf_id:
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
-                if agent.carrying_shelf in self.request_queue:
+                if agent.carrying_shelf in self.request_queue and (agent.prev_x, agent.prev_y) != (agent.x, agent.y):
                     if self.reward_type == RewardType.GLOBAL:
                         rewards += 1
                     elif self.reward_type == RewardType.INDIVIDUAL:
@@ -797,10 +798,12 @@ class Warehouse(gym.Env):
             
             # self.update_shelf_properties()
             # rewards = self.nonsparse_reward(agent, pos, goals, dist, rewards)
-            
+
 
 
         self._recalc_grid()
+
+
 
         
 
