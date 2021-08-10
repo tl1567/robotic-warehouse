@@ -791,7 +791,7 @@ class Warehouse(gym.Env):
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
                         ## might need to change this
                         # rewards[agent.id - 1] += 0.5
-                        rewards[agent.id - 1] += (1 - self._cur_steps / self.max_steps) / 2                   
+                        rewards[agent.id - 1] += (1 - 0.9 * self._cur_steps / self.max_steps) / 2                   
                     agent.has_delivered = False          
             
             # if agent.carrying_shelf:
@@ -859,17 +859,17 @@ class Warehouse(gym.Env):
             ## Keep the following sparse rewards
 
             if self.reward_type == RewardType.GLOBAL:
-                rewards += 1 - self._cur_steps / self.max_steps
+                rewards += 1 - 0.9 * self._cur_steps / self.max_steps
                 # rewards += 1
             elif self.reward_type == RewardType.INDIVIDUAL:
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
                 # rewards[agent_id - 1] += 1
-                rewards[agent_id - 1] += 1 - self._cur_steps / self.max_steps
+                rewards[agent_id - 1] += 1 - 0.9 * self._cur_steps / self.max_steps
             elif self.reward_type == RewardType.TWO_STAGE:
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
                 self.agents[agent_id - 1].has_delivered = True
                 # rewards[agent_id - 1] += 0.5            
-                rewards[agent_id - 1] += (1 - self._cur_steps / self.max_steps) / 2
+                rewards[agent_id - 1] += (1 - 0.9 * self._cur_steps / self.max_steps) / 2
 
         # print("rewards:", rewards)
 
