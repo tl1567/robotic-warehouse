@@ -770,31 +770,28 @@ class Warehouse(gym.Env):
                 shelf_id = self.grid[_LAYER_SHELFS, agent.y, agent.x]
                 if shelf_id:
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
-                if agent.carrying_shelf and agent.carrying_shelf in self.request_queue:                     
-                    if self.reward_type == RewardType.GLOBAL:
-                        rewards += 1
-                    elif self.reward_type == RewardType.INDIVIDUAL:
-                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        rewards[agent_id - 1] += 1
-                    elif self.reward_type == RewardType.TWO_STAGE:
-                        agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
-                        self.agents[agent_id - 1].has_delivered = True          
-                        rewards[agent_id - 1] += 0.5 
+                # if agent.carrying_shelf and agent.carrying_shelf in self.request_queue:                     
+                #     if self.reward_type == RewardType.GLOBAL:
+                #         rewards += 1
+                #     elif self.reward_type == RewardType.INDIVIDUAL:
+                #         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                #         rewards[agent_id - 1] += 1
+                #     elif self.reward_type == RewardType.TWO_STAGE:
+                #         agent_id = self.grid[_LAYER_AGENTS, agent.y, agent.x]
+                #         self.agents[agent_id - 1].has_delivered = True          
+                #         rewards[agent_id - 1] += 0.5 
                 self.carried_shelf.append(agent.carrying_shelf)               
             elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:            
                 if not self._is_highway(agent.x, agent.y): 
                     # if (agent.x, agent.y) == self.goals and agent.carrying_shelf in self.carried_delivered_shelf:
                     #     self.carried_delivered_shelf.remove(agent.carrying_shelf)  
                     #     self.uncarried_delivered_shelf.append(agent.carrying_shelf)
-                    if agent.carrying_shelf not in self.request_queue:
-                        self.carried_shelf.remove(agent.carrying_shelf)         
-                        agent.carrying_shelf = None     
-                    # self.carried_shelf.remove(agent.carrying_shelf)         
-                    # agent.carrying_shelf = None                    
+                    self.carried_shelf.remove(agent.carrying_shelf)         
+                    agent.carrying_shelf = None                    
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
                         ## might need to change this
                         # rewards[agent.id - 1] += 0.5
-                        rewards[agent.id - 1] += 2.5                   
+                        rewards[agent.id - 1] += (1 - self._cur_steps / self.max_steps) / 2                   
                     agent.has_delivered = False          
             
             # if agent.carrying_shelf:
@@ -862,16 +859,17 @@ class Warehouse(gym.Env):
             ## Keep the following sparse rewards
 
             if self.reward_type == RewardType.GLOBAL:
-                rewards += 5
+                rewards += 1 - self._cur_steps / self.max_steps
+                # rewards += 1
             elif self.reward_type == RewardType.INDIVIDUAL:
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
                 # rewards[agent_id - 1] += 1
-                rewards[agent_id - 1] += 5
+                rewards[agent_id - 1] += 1 - self._cur_steps / self.max_steps
             elif self.reward_type == RewardType.TWO_STAGE:
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
                 self.agents[agent_id - 1].has_delivered = True
                 # rewards[agent_id - 1] += 0.5            
-                rewards[agent_id - 1] += 2.5  
+                rewards[agent_id - 1] += (1 - self._cur_steps / self.max_steps) / 2
 
         # print("rewards:", rewards)
 
