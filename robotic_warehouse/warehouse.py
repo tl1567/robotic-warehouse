@@ -890,18 +890,29 @@ class Warehouse(gym.Env):
 
         _, self.requested_shelf_coordinates = self.shelf_ids_coordinates(self.request_queue)
 
-        ## Coordinating the closest requested shelf to each agent
-        
+        ## Coordinating the closest requested shelf to each agent        
         self.empty_agents = [agent for agent in self.agents if not agent.carrying_shelf]
-        self.n_empty_agents = len(self.empty_agents)
-        self.n_uncarried_requested_shelves = len(self.uncarried_requested_shelf)
+        # self.n_empty_agents = len(self.empty_agents)
+        # self.n_uncarried_requested_shelves = len(self.uncarried_requested_shelf)
         
 
         self.dist_empty_agents_uncarried_requested_shelves = \
-            [[self.dist_pos_goal(np.array([agent.y, agent.x]), coord) for coord in self.uncarried_requested_shelf_coordinates] \
-                for agent in self.empty_agents]
+            np.array([[self.dist_pos_goal(np.array([agent.y, agent.x]), coord) for agent in self.empty_agents]\
+                 for coord in self.uncarried_requested_shelf_coordinates])
+        
+        self.dist_goals_uncarried_requested_shelves = \
+            np.array([min([self.dist_pos_goal(goal, coord) for goal in goals])\
+                 for coord in self.uncarried_requested_shelf_coordinates])
 
+        print("dist of goal and uncarried requested shelves", self.dist_goals_uncarried_requested_shelves)
         print(self.dist_empty_agents_uncarried_requested_shelves)
+        if self.dist_empty_agents_uncarried_requested_shelves:
+            print(np.argmin(self.dist_empty_agents_uncarried_requested_shelves, axis=1))
+
+        # uncarried requested shelves which are farther from the goal locations have higher priority
+        # print(np.argmax(self.dist_goals_uncarried_requested_shelves, axis=))
+
+
 
         for agent in self.agents:
             pos = np.array([agent.y, agent.x]) # coordinates of the agent
