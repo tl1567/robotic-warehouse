@@ -236,9 +236,18 @@ class Warehouse(gym.Env):
 
         self.agents: List[Agent] = []
 
+        # self.goals: List[Tuple[int, int]] = [
+        #     (self.grid_size[1] // 2 - 1, self.grid_size[0] - 1),
+        #     (self.grid_size[1] // 2, self.grid_size[0] - 1),
+        # ]
+
         self.goals: List[Tuple[int, int]] = [
             (self.grid_size[1] // 2 - 1, self.grid_size[0] - 1),
             (self.grid_size[1] // 2, self.grid_size[0] - 1),
+            (self.grid_size[1] - 1, self.grid_size[0] - 1),
+            (self.grid_size[1] - 2, self.grid_size[0] - 1),
+            (0, self.grid_size[0] - 1),
+            (1, self.grid_size[0] - 1)
         ]
 
         self._obs_bits_for_self = 4 + len(Direction)
